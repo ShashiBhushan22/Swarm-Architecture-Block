@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Orchestrator State Machine - Live Visualization</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .status-bar {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-around;
+            border: 2px solid #e9ecef;
+        }
+        
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .status-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .status-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .state-machine {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .state {
+            background: #f8f9fa;
+            border: 3px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .state:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .state.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #5568d3;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            animation: pulse 2s infinite;
+        }
+        
+        .state.completed {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        
+        .state.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        
+        .state.aborted {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        
+        .arrow {
+            text-align: center;
+            color: #6c757d;
+            font-size: 24px;
+            margin: -5px 0;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+            }
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        
+        .legend-box {
+            width: 30px;
+            height: 20px;
+            border-radius: 5px;
+            border: 2px solid;
+        }
+        
+        .legend-box.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #5568d3;
+        }
+        
+        .legend-box.completed {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        
+        .legend-box.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        
+        .legend-box.pending {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+        }
+        
+        .connection-status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+        
+        .connection-status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .connection-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .timestamp {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .btn-refresh {
+            background: #667eea;
+            color: white;
+        }
+        
+        .state-description {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Orchestrator State Machine</h1>
+        <div class="subtitle">Real-time State Visualization - Version 1</div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-label">Current State</div>
+                <div class="status-value" id="current-state">-</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Mission ID</div>
+                <div class="status-value" id="mission-id">-</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Error Count</div>
+                <div class="status-value" id="error-count">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Elapsed Time</div>
+                <div class="status-value" id="elapsed-time">0s</div>
+            </div>
+        </div>
+        
+        <div class="state-machine">
+            <div class="state" data-state="INIT">
+                INIT
+                <div class="state-description">System initialization</div>
+            </div>
+            <div class="arrow">↓</div>
+            
+            <div class="state" data-state="READY">
+                READY
+                <div class="state-description">Waiting for start command</div>
+            </div>
+            <div class="arrow">↓</div>
+            
+            <div class="state" data-state="SCANNING">
+                SCANNING
+                <div class="state-description">Area scan in progress</div>
+            </div>
+            <div class="arrow">↓</div>
+            
+            <div class="state" data-state="MAPPING">
+                MAPPING
+                <div class="state-description">Building occupancy grid</div>
+            </div>
+            <div class="arrow">↓</div>
+            
+            <div class="state" data-state="POI_DETECTION">
+                POI DETECTION
+                <div class="state-description">Identifying points of interest</div>
+            </div>
+            <div class="arrow">↓</div>
+            
+            <div class="state" data-state="TASK_ALLOCATION">
+                TASK ALLOCATION
+                <div class="state-description">Assigning POIs to drones</div>
+            </div>
+            <div class="arrow">↓</div>
+            
+            <div class="state" data-state="PATH_PLANNING">
+                PATH PLANNING
+                <div class="state-description">Generating paths (A* algorithm)</div>
+            </div>
+            <div class="arrow">↓</div>
+            
+            <div class="state" data-state="COMMAND_GENERATION">
+                COMMAND GENERATION
+                <div class="state-description">Creating MAVLink commands</div>
+            </div>
+            <div class="arrow">↓</div>
+            
+            <div class="state" data-state="DRONE_EXECUTION">
+                DRONE EXECUTION
+                <div class="state-description">Mission in progress</div>
+            </div>
+            <div class="arrow">↓</div>
+            
+            <div class="state" data-state="COMPLETED">
+                ✓ COMPLETED
+                <div class="state-description">Mission successful</div>
+            </div>
+            
+            <div style="margin-top: 20px; border-top: 2px dashed #dee2e6; padding-top: 20px;">
+                <div class="state" data-state="PAUSED">
+                    ⏸ PAUSED
+                    <div class="state-description">Mission paused (can resume)</div>
+                </div>
+                <div class="arrow">↓</div>
+                
+                <div class="state" data-state="ERROR">
+                    ⚠ ERROR
+                    <div class="state-description">Error occurred (retry in progress)</div>
+                </div>
+                <div class="arrow">↓</div>
+                
+                <div class="state" data-state="ABORTED">
+                    ✖ ABORTED
+                    <div class="state-description">Mission terminated</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-box active"></div>
+                <span>Active State</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box completed"></div>
+                <span>Completed</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box error"></div>
+                <span>Error/Aborted</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box pending"></div>
+                <span>Pending</span>
+            </div>
+        </div>
+        
+        <div class="connection-status disconnected" id="connection-status">
+            Waiting for orchestrator...
+        </div>
+        
+        <div class="timestamp" id="timestamp">
+            Last update: Never
+        </div>
+        
+        <div class="controls">
+            <button class="btn-refresh" onclick="location.reload()">
+                🔄 Refresh Page
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        let currentState = null;
+        let startTime = null;
+        let updateInterval = null;
+        
+        // Simulate state updates (replace with actual ROS2 topic subscription)
+        function updateStateFromLog() {
+            // This function reads from a shared log file that the orchestrator writes to
+            fetch('orchestrator_state.json')
+                .then(response => response.json())
+                .then(data => {
+                    updateVisualization(data);
+                })
+                .catch(error => {
+                    document.getElementById('connection-status').textContent = 
+                        'Disconnected - Start orchestrator to see live updates';
+                    document.getElementById('connection-status').className = 
+                        'connection-status disconnected';
+                });
+        }
+        
+        function updateVisualization(data) {
+            const state = data.state;
+            const missionId = data.mission_id;
+            const errorCount = data.error_count;
+            
+            // Update status bar
+            document.getElementById('current-state').textContent = state;
+            document.getElementById('mission-id').textContent = missionId || '-';
+            document.getElementById('error-count').textContent = errorCount;
+            
+            // Update elapsed time
+            if (!startTime && state !== 'INIT') {
+                startTime = Date.now();
+            }
+            if (startTime) {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('elapsed-time').textContent = elapsed + 's';
+            }
+            
+            // Update state visualization
+            const allStates = document.querySelectorAll('.state');
+            allStates.forEach(stateEl => {
+                stateEl.classList.remove('active', 'completed', 'error', 'aborted');
+                
+                if (stateEl.dataset.state === state) {
+                    if (state === 'COMPLETED') {
+                        stateEl.classList.add('completed');
+                    } else if (state === 'ERROR') {
+                        stateEl.classList.add('error');
+                    } else if (state === 'ABORTED') {
+                        stateEl.classList.add('aborted');
+                    } else {
+                        stateEl.classList.add('active');
+                    }
+                    
+                    // Scroll into view
+                    stateEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+            
+            // Update connection status
+            document.getElementById('connection-status').textContent = 
+                '✓ Connected - Live updates active';
+            document.getElementById('connection-status').className = 
+                'connection-status connected';
+            
+            // Update timestamp
+            const now = new Date();
+            document.getElementById('timestamp').textContent = 
+                `Last update: ${now.toLocaleTimeString()}`;
+            
+            currentState = state;
+        }
+        
+        // Poll for updates every 500ms
+        updateInterval = setInterval(updateStateFromLog, 500);
+        
+        // Initial update
+        updateStateFromLog();
+    </script>
+</body>
+</html>

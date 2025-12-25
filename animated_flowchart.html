@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Swarm Architecture - Animated Flowchart</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            animation: fadeInDown 1s ease;
+        }
+        
+        .header p {
+            font-size: 16px;
+            color: #0066cc;
+            font-style: italic;
+        }
+        
+        .architecture {
+            display: flex;
+            gap: 30px;
+            position: relative;
+            min-height: 800px;
+        }
+        
+        .main-pipeline {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+        }
+        
+        .module {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+        
+        .module:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .module.active {
+            border-color: #6c8ebf !important;
+            background: linear-gradient(135deg, #dae8fc 0%, #ffffff 100%);
+            animation: pulse 1.5s ease-in-out;
+        }
+        
+        .module.processing {
+            animation: processing 2s infinite;
+        }
+        
+        .module h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .module p {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .module .topic {
+            font-size: 11px;
+            color: #999;
+            font-family: monospace;
+        }
+        
+        /* Module specific colors */
+        .orchestrator {
+            background: linear-gradient(135deg, #dae8fc 0%, #b8d4fa 100%);
+            border-color: #6c8ebf;
+        }
+        
+        .scanning { border-color: #d6b656; }
+        .mapping { border-color: #d6b656; }
+        .poi { border-color: #d6b656; }
+        .task-alloc { border-color: #d6b656; }
+        .path-plan { 
+            border-color: #82b366;
+            background: linear-gradient(135deg, #d5e8d4 0%, #ffffff 100%);
+        }
+        .cmd-gen { border-color: #d6b656; }
+        .dgrc { 
+            border-color: #d79b00;
+            background: linear-gradient(135deg, #ffe6cc 0%, #ffffff 100%);
+        }
+        .telemetry { 
+            border-color: #b85450;
+            background: linear-gradient(135deg, #f8cecc 0%, #ffffff 100%);
+        }
+        
+        /* Safety module on the side */
+        .safety-panel {
+            width: 280px;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            border: 3px solid #cc0000;
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(204, 0, 0, 0.2);
+        }
+        
+        .safety-panel h3 {
+            color: #cc0000;
+            font-size: 18px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .safety-status {
+            margin: 10px 0;
+            font-size: 13px;
+            color: #333;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #00cc00;
+            transition: all 0.3s ease;
+        }
+        
+        .safety-status.warning {
+            border-left-color: #ff9900;
+            animation: blink 1s infinite;
+        }
+        
+        .safety-status.critical {
+            border-left-color: #cc0000;
+            animation: shake 0.5s infinite;
+        }
+        
+        /* Data flow animations */
+        .flow-arrow {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 3px;
+            height: 40px;
+            background: linear-gradient(to bottom, transparent, #0066cc, transparent);
+            animation: flow-down 1.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        .status-arrow {
+            position: absolute;
+            right: -40px;
+            top: 50%;
+            width: 40px;
+            height: 2px;
+            background: linear-gradient(to right, #999, transparent);
+            animation: flow-right 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        /* Particle effects */
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #0066cc, #004499);
+            border-radius: 50%;
+            animation: particle-flow 3s linear infinite;
+            box-shadow: 0 0 10px #0066cc;
+        }
+        
+        .status-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: radial-gradient(circle, #999, #666);
+            border-radius: 50%;
+            animation: status-flow 2.5s linear infinite;
+            box-shadow: 0 0 8px #999;
+        }
+        
+        /* Safety monitoring pulse */
+        .safety-pulse {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid #cc0000;
+            border-radius: 12px;
+            animation: safety-scan 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        /* Stats panel */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            color: white;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-item .value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            animation: countUp 2s ease;
+        }
+        
+        .stat-item .label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        /* Control panel */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #00cc00, #009900);
+            color: white;
+        }
+        
+        .btn-pause {
+            background: linear-gradient(135deg, #ff9900, #cc7700);
+            color: white;
+        }
+        
+        .btn-stop {
+            background: linear-gradient(135deg, #cc0000, #990000);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(108, 142, 191, 0.6);
+            }
+        }
+        
+        @keyframes processing {
+            0%, 100% {
+                border-color: inherit;
+            }
+            50% {
+                border-color: #6c8ebf;
+            }
+        }
+        
+        @keyframes flow-down {
+            0% {
+                top: -20px;
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                top: 100%;
+                opacity: 0;
+            }
+        }
+        
+        @keyframes flow-right {
+            0% {
+                right: -40px;
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                right: 100%;
+                opacity: 0;
+            }
+        }
+        
+        @keyframes particle-flow {
+            0% {
+                top: -10px;
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                top: 100%;
+                opacity: 0;
+            }
+        }
+        
+        @keyframes status-flow {
+            0% {
+                right: -10px;
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                right: 100%;
+                opacity: 0;
+            }
+        }
+        
+        @keyframes safety-scan {
+            0%, 100% {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        @keyframes countUp {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        /* Progress bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00cc00, #00ff00);
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% {
+                background-position: -100% 0;
+            }
+            100% {
+                background-position: 100% 0;
+            }
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .mission-log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1e1e1e;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #00ff00;
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚁 SWARM DRONE SYSTEM - LIVE ARCHITECTURE</h1>
+            <p>Version 1 - Unidirectional Data Pipeline + Centralized Status Management</p>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-start" onclick="startMission()">▶ START MISSION</button>
+            <button class="btn btn-pause" onclick="pauseMission()">⏸ PAUSE</button>
+            <button class="btn btn-stop" onclick="stopMission()">⏹ STOP</button>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="value" id="drones-count">3</div>
+                <div class="label">Active Drones</div>
+            </div>
+            <div class="stat-item">
+                <div class="value" id="pois-count">0</div>
+                <div class="label">POIs Detected</div>
+            </div>
+            <div class="stat-item">
+                <div class="value" id="waypoints-count">0</div>
+                <div class="label">Waypoints</div>
+            </div>
+            <div class="stat-item">
+                <div class="value" id="progress">0%</div>
+                <div class="label">Mission Progress</div>
+            </div>
+        </div>
+        
+        <div class="architecture">
+            <div class="main-pipeline">
+                <!-- Orchestrator -->
+                <div class="module orchestrator" id="orchestrator">
+                    <h3>ORCHESTRATOR</h3>
+                    <p>State Machine Manager</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="orch-progress"></div>
+                    </div>
+                </div>
+                
+                <!-- Scanning -->
+                <div class="module scanning" id="scanning">
+                    <div class="flow-arrow"></div>
+                    <div class="status-arrow"></div>
+                    <div class="particle" style="animation-delay: 0s;"></div>
+                    <div class="particle" style="animation-delay: 1s;"></div>
+                    <h3>1. SCANNING MODULE</h3>
+                    <p>Grid pattern, sensor data</p>
+                    <p class="topic">→ /scanning/data</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="scan-progress"></div>
+                    </div>
+                </div>
+                
+                <!-- Mapping -->
+                <div class="module mapping" id="mapping">
+                    <div class="flow-arrow"></div>
+                    <div class="status-arrow"></div>
+                    <div class="particle" style="animation-delay: 0.5s;"></div>
+                    <div class="particle" style="animation-delay: 1.5s;"></div>
+                    <h3>2. MAPPING MODULE</h3>
+                    <p>Occupancy grid, obstacles</p>
+                    <p class="topic">→ /mapping/occupancy_grid</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="map-progress"></div>
+                    </div>
+                </div>
+                
+                <!-- POI Detection -->
+                <div class="module poi" id="poi">
+                    <div class="flow-arrow"></div>
+                    <div class="status-arrow"></div>
+                    <div class="particle" style="animation-delay: 0.2s;"></div>
+                    <div class="particle" style="animation-delay: 1.2s;"></div>
+                    <h3>3. POI DETECTION</h3>
+                    <p>Rule-based identification</p>
+                    <p class="topic">→ /poi/poi_list</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="poi-progress"></div>
+                    </div>
+                </div>
+                
+                <!-- Task Allocation -->
+                <div class="module task-alloc" id="task-alloc">
+                    <div class="flow-arrow"></div>
+                    <div class="status-arrow"></div>
+                    <div class="particle" style="animation-delay: 0.7s;"></div>
+                    <div class="particle" style="animation-delay: 1.7s;"></div>
+                    <h3>4. TASK ALLOCATION</h3>
+                    <p>Greedy nearest-neighbor</p>
+                    <p class="topic">→ /task_allocation/assignments</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="task-progress"></div>
+                    </div>
+                </div>
+                
+                <!-- Path Planning -->
+                <div class="module path-plan" id="path-plan">
+                    <div class="flow-arrow"></div>
+                    <div class="status-arrow"></div>
+                    <div class="particle" style="animation-delay: 0.3s;"></div>
+                    <div class="particle" style="animation-delay: 1.3s;"></div>
+                    <h3>5. PATH PLANNING</h3>
+                    <p>A* algorithm, for-loop</p>
+                    <p class="topic">→ /path_planning/path/{id}</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="path-progress"></div>
+                    </div>
+                </div>
+                
+                <!-- Command Generation -->
+                <div class="module cmd-gen" id="cmd-gen">
+                    <div class="flow-arrow"></div>
+                    <div class="status-arrow"></div>
+                    <div class="particle" style="animation-delay: 0.9s;"></div>
+                    <div class="particle" style="animation-delay: 1.9s;"></div>
+                    <h3>6. COMMAND GENERATION</h3>
+                    <p>MAVLink commands</p>
+                    <p class="topic">→ /command_gen/commands/{id}</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="cmd-progress"></div>
+                    </div>
+                </div>
+                
+                <!-- DGRC Bridge -->
+                <div class="module dgrc" id="dgrc">
+                    <div class="flow-arrow"></div>
+                    <div class="status-arrow"></div>
+                    <div class="particle" style="animation-delay: 0.4s;"></div>
+                    <div class="particle" style="animation-delay: 1.4s;"></div>
+                    <h3>7. DGRC BRIDGE</h3>
+                    <p>ROS2 ↔ MAVLink (MAVROS)</p>
+                    <p class="topic">↔ Bidirectional</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="dgrc-progress"></div>
+                    </div>
+                </div>
+                
+                <!-- Telemetry -->
+                <div class="module telemetry" id="telemetry">
+                    <div class="status-arrow"></div>
+                    <h3>8. TELEMETRY & PX4</h3>
+                    <p>Hardware interface</p>
+                    <p class="topic">10-20 Hz telemetry</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="telem-progress"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Safety Panel -->
+            <div class="safety-panel">
+                <div class="safety-pulse"></div>
+                <h3>🛡️ SAFETY & SECURITY</h3>
+                <div class="safety-status" id="battery-status">
+                    🔋 Battery: <span id="battery-level">100%</span>
+                </div>
+                <div class="safety-status" id="geofence-status">
+                    📍 Geofence: <span id="geofence-state">OK</span>
+                </div>
+                <div class="safety-status" id="collision-status">
+                    ⚠️ Collision: <span id="collision-state">Clear</span>
+                </div>
+                <div class="safety-status" id="comm-status">
+                    📡 Comms: <span id="comm-state">Strong</span>
+                </div>
+                <div class="safety-status" id="system-status">
+                    ⚙️ System: <span id="system-state">Healthy</span>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 10px; background: white; border-radius: 6px;">
+                    <h4 style="font-size: 12px; margin-bottom: 10px; color: #cc0000;">Emergency Actions:</h4>
+                    <p style="font-size: 11px; margin: 5px 0;">✓ Alert operator</p>
+                    <p style="font-size: 11px; margin: 5px 0;">✓ Trigger RTH/Land</p>
+                    <p style="font-size: 11px; margin: 5px 0;">✓ Emergency stop</p>
+                    <p style="font-size: 11px; margin: 5px 0;">✓ Log incidents</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mission-log" id="mission-log">
+            <div class="log-entry">[SYSTEM] Ready to start mission...</div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #dae8fc, #b8d4fa);"></div>
+                <span>Orchestrator</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #fff2cc; border: 2px solid #d6b656;"></div>
+                <span>Core Module</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #d5e8d4, #fff);"></div>
+                <span>Path Planning</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #f8cecc, #fff);"></div>
+                <span>Hardware</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f5f5f5; border: 2px solid #cc0000;"></div>
+                <span>Safety</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let missionRunning = false;
+        let missionPaused = false;
+        let currentModule = 0;
+        let missionProgress = 0;
+        let batteryLevel = 100;
+        
+        const modules = [
+            'orchestrator', 'scanning', 'mapping', 'poi', 
+            'task-alloc', 'path-plan', 'cmd-gen', 'dgrc', 'telemetry'
+        ];
+        
+        const progressBars = [
+            'orch-progress', 'scan-progress', 'map-progress', 'poi-progress',
+            'task-progress', 'path-progress', 'cmd-progress', 'dgrc-progress', 'telem-progress'
+        ];
+        
+        const moduleNames = [
+            'ORCHESTRATOR', 'SCANNING', 'MAPPING', 'POI DETECTION',
+            'TASK ALLOCATION', 'PATH PLANNING', 'COMMAND GENERATION', 'DGRC BRIDGE', 'TELEMETRY'
+        ];
+        
+        function log(message, type = 'INFO') {
+            const logDiv = document.getElementById('mission-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `[${timestamp}] [${type}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStats() {
+            if (!missionRunning) return;
+            
+            // Update POIs
+            if (currentModule >= 3) {
+                document.getElementById('pois-count').textContent = 6;
+            }
+            
+            // Update waypoints
+            if (currentModule >= 5) {
+                document.getElementById('waypoints-count').textContent = 12;
+            }
+            
+            // Update overall progress
+            const progress = Math.floor((currentModule / modules.length) * 100);
+            document.getElementById('progress').textContent = progress + '%';
+            
+            // Update battery
+            if (missionRunning && !missionPaused) {
+                batteryLevel -= 0.1;
+                if (batteryLevel < 0) batteryLevel = 0;
+                document.getElementById('battery-level').textContent = batteryLevel.toFixed(1) + '%';
+                
+                const batteryStatus = document.getElementById('battery-status');
+                if (batteryLevel < 20) {
+                    batteryStatus.className = 'safety-status critical';
+                } else if (batteryLevel < 50) {
+                    batteryStatus.className = 'safety-status warning';
+                } else {
+                    batteryStatus.className = 'safety-status';
+                }
+            }
+        }
+        
+        function processModule(index) {
+            if (!missionRunning || missionPaused || index >= modules.length) {
+                if (index >= modules.length) {
+                    log('Mission completed successfully!', 'SUCCESS');
+                    missionRunning = false;
+                    document.getElementById('progress').textContent = '100%';
+                }
+                return;
+            }
+            
+            const moduleId = modules[index];
+            const progressId = progressBars[index];
+            const moduleName = moduleNames[index];
+            
+            // Activate module
+            const moduleEl = document.getElementById(moduleId);
+            moduleEl.classList.add('active', 'processing');
+            log(`Processing ${moduleName}...`);
+            
+            // Simulate progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                if (missionPaused) return;
+                
+                progress += 5;
+                document.getElementById(progressId).style.width = progress + '%';
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    moduleEl.classList.remove('processing');
+                    log(`${moduleName} completed`, 'SUCCESS');
+                    
+                    // Move to next module
+                    currentModule++;
+                    updateStats();
+                    setTimeout(() => {
+                        processModule(currentModule);
+                    }, 500);
+                }
+            }, 100);
+        }
+        
+        function startMission() {
+            if (missionRunning) {
+                log('Mission already running!', 'WARNING');
+                return;
+            }
+            
+            log('='.repeat(50), 'SYSTEM');
+            log('MISSION START - Initializing system...', 'SYSTEM');
+            log('='.repeat(50), 'SYSTEM');
+            
+            missionRunning = true;
+            missionPaused = false;
+            currentModule = 0;
+            missionProgress = 0;
+            batteryLevel = 100;
+            
+            // Reset all modules
+            modules.forEach((id, idx) => {
+                document.getElementById(id).classList.remove('active', 'processing');
+                document.getElementById(progressBars[idx]).style.width = '0%';
+            });
+            
+            // Reset stats
+            document.getElementById('pois-count').textContent = '0';
+            document.getElementById('waypoints-count').textContent = '0';
+            document.getElementById('progress').textContent = '0%';
+            
+            // Start processing
+            processModule(0);
+        }
+        
+        function pauseMission() {
+            if (!missionRunning) {
+                log('No mission running!', 'WARNING');
+                return;
+            }
+            
+            missionPaused = !missionPaused;
+            if (missionPaused) {
+                log('Mission paused', 'WARNING');
+            } else {
+                log('Mission resumed', 'INFO');
+                processModule(currentModule);
+            }
+        }
+        
+        function stopMission() {
+            if (!missionRunning) {
+                log('No mission running!', 'WARNING');
+                return;
+            }
+            
+            log('Mission aborted by user', 'ERROR');
+            log('='.repeat(50), 'SYSTEM');
+            missionRunning = false;
+            missionPaused = false;
+            
+            // Deactivate all modules
+            modules.forEach((id) => {
+                document.getElementById(id).classList.remove('active', 'processing');
+            });
+        }
+        
+        // Simulate safety monitoring
+        setInterval(() => {
+            if (!missionRunning) return;
+            
+            // Random safety checks
+            const commStates = ['Strong', 'Good', 'Weak'];
+            const commState = commStates[Math.floor(Math.random() * commStates.length)];
+            document.getElementById('comm-state').textContent = commState;
+            
+            if (commState === 'Weak') {
+                document.getElementById('comm-status').className = 'safety-status warning';
+            } else {
+                document.getElementById('comm-status').className = 'safety-status';
+            }
+        }, 3000);
+        
+        // Update stats periodically
+        setInterval(updateStats, 200);
+        
+        // Initial log
+        log('System initialized successfully', 'SYSTEM');
+        log('Ready to start mission - Click START MISSION button', 'INFO');
+    </script>
+</body>
+</html>
